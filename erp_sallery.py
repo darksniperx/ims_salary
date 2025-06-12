@@ -1,4 +1,5 @@
 import os
+import re
 import requests
 from telegram import Update, KeyboardButton, ReplyKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
@@ -15,6 +16,10 @@ user_list = set()
 
 os.makedirs(SAVE_DIR, exist_ok=True)
 os.makedirs(LOG_DIR, exist_ok=True)
+
+# ✅ Markdown escape function
+def escape_md(text):
+    return re.sub(r'([_*\[\]()~`>#+\-=|{}.!])', r'\\\1', str(text))
 
 def download_pdf(emp_id):
     url = f"{BASE_URL}{emp_id}"
@@ -38,8 +43,13 @@ def log_usage(user, action):
 async def notify_admin(context, user, action):
     await context.bot.send_message(
         chat_id=ADMIN_ID,
-        text=f"📢 *User Alert:*\n👤 @{user.username or 'NoUsername'}\n🆔 {user.id}\n🎯 Action: `{action}`",
-        parse_mode="Markdown"
+        text=(
+            f"📢 *User Alert:*\n"
+            f"👤 @{escape_md(user.username or 'NoUsername')}\n"
+            f"🆔 {user.id}\n"
+            f"🎯 Action: `{escape_md(action)}`"
+        ),
+        parse_mode="MarkdownV2"
     )
 
 # /start command
@@ -171,8 +181,13 @@ async def contact_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = " ".join(context.args)
     await context.bot.send_message(
         chat_id=ADMIN_ID,
-        text=f"📩 *Message from user:*\n👤 @{user.username or 'NoUsername'}\n🆔 {user.id}\n\n📝 {message}",
-        parse_mode="Markdown"
+        text=(
+            f"📩 *Message from user:*\n"
+            f"👤 @{escape_md(user.username or 'NoUsername')}\n"
+            f"🆔 {user.id}\n\n"
+            f"📝 {escape_md(message)}"
+        ),
+        parse_mode="MarkdownV2"
     )
     await update.message.reply_text("✅ Your message has been sent to the admin.")
 
